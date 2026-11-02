@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Disallow: /
+
+# Host
+Host: https://dociekai.pl
+
+# Sitemaps
+Sitemap: https://dociekai.pl/sitemap.xml

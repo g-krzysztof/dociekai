@@ -1,0 +1,1471 @@
+/*
+  Dział „Pobierz” (/materialy) — świat „Drukarnia”.
+  Wszystko pod .materialy-druk (strony działu) albo .kartka (sam materiał,
+  także w wersji do druku), żeby nic nie wyciekło do reszty serwisu.
+
+  Strona to MATA DO CIĘCIA: ciemna, z siatką centymetrową i linijką. Na niej
+  leżą prawdziwe kartki — białe w obu motywach, bo papier nie ciemnieje.
+  Kartka liczy wszystko w jednostkach cqw (1cqw = 1/100 szerokości kartki),
+  więc ta sama komponenta jest miniaturą, podglądem i stroną A4 w PDF.
+*/
+
+/* Zmienne świata są też pod .materialy-akcent — kolumna „do druku” na
+   stronach modułów kursów pożycza matę, bilet i teczkę bez reszty działu. */
+.materialy-druk,
+.materialy-akcent {
+  --mata: oklch(0.34 0.055 168);
+  --mata-gleboka: oklch(0.29 0.05 168);
+  --mata-linia: oklch(0.44 0.055 168);
+  --mata-linia-mocna: oklch(0.52 0.06 168);
+  --mata-tekst: oklch(0.96 0.02 95);
+  --mata-tekst-cichy: oklch(0.84 0.035 120);
+  --teczka: oklch(0.8 0.09 78);
+  --teczka-ciemna: oklch(0.66 0.1 70);
+  --teczka-tekst: oklch(0.3 0.06 60);
+  --bilet: oklch(0.985 0.012 95);
+  --bilet-tekst: oklch(0.24 0.03 60);
+  --bilet-cichy: oklch(0.46 0.035 60);
+}
+
+.materialy-druk {
+  background-color: var(--mata);
+  color: var(--mata-tekst);
+}
+
+.dark .materialy-druk,
+.dark .materialy-akcent {
+  --mata: oklch(0.25 0.04 168);
+  --mata-gleboka: oklch(0.21 0.035 168);
+  --mata-linia: oklch(0.33 0.045 168);
+  --mata-linia-mocna: oklch(0.4 0.05 168);
+}
+
+.materialy-druk ::selection {
+  background: var(--teczka);
+  color: var(--teczka-tekst);
+}
+
+.materialy-druk :focus-visible {
+  outline: 2px solid var(--teczka);
+  outline-offset: 3px;
+}
+
+/* Siatka maty: drobna co 1 „cm”, mocna co 5, plus ukośne prowadnice 45°. */
+.mata {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--mata);
+  background-image:
+    linear-gradient(to right, var(--mata-linia-mocna) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--mata-linia-mocna) 1px, transparent 1px),
+    linear-gradient(to right, var(--mata-linia) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--mata-linia) 1px, transparent 1px);
+  background-size:
+    200px 200px,
+    200px 200px,
+    40px 40px,
+    40px 40px;
+  background-position: -1px -1px;
+}
+
+.mata::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 279px,
+    color-mix(in oklch, var(--mata-linia-mocna) 55%, transparent) 279px 280px
+  );
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
+}
+
+/* Linijka wzdłuż górnej krawędzi maty — liczby co 5 „cm”. */
+.mata-linijka {
+  display: flex;
+  height: 22px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--mata-linia-mocna);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--mata-tekst-cichy);
+  background-image: linear-gradient(to right, var(--mata-linia-mocna) 1px, transparent 1px);
+  background-size: 40px 8px;
+  background-repeat: repeat-x;
+  background-position: -1px 100%;
+}
+
+.mata-linijka span {
+  flex: 0 0 200px;
+  padding: 2px 0 0 4px;
+}
+
+/* Znaczniki cięcia w rogach dowolnej ramki. */
+.znaczniki-ciecia {
+  position: relative;
+}
+
+.znaczniki-ciecia::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  pointer-events: none;
+  --zc: color-mix(in oklch, var(--mata-tekst) 70%, transparent);
+  background:
+    linear-gradient(var(--zc), var(--zc)) top left / 10px 1px,
+    linear-gradient(var(--zc), var(--zc)) top left / 1px 10px,
+    linear-gradient(var(--zc), var(--zc)) top right / 10px 1px,
+    linear-gradient(var(--zc), var(--zc)) top right / 1px 10px,
+    linear-gradient(var(--zc), var(--zc)) bottom left / 10px 1px,
+    linear-gradient(var(--zc), var(--zc)) bottom left / 1px 10px,
+    linear-gradient(var(--zc), var(--zc)) bottom right / 10px 1px,
+    linear-gradient(var(--zc), var(--zc)) bottom right / 1px 10px;
+  background-repeat: no-repeat;
+}
+
+/* Cień kartki leżącej na macie: kontakt + miękki rozlany. */
+.cien-kartki {
+  box-shadow:
+    0 1px 1px oklch(0.15 0.03 168 / 0.35),
+    0 10px 24px -6px oklch(0.12 0.03 168 / 0.45),
+    0 30px 60px -20px oklch(0.1 0.03 168 / 0.5);
+}
+
+/* ─── Wachlarz w hero ─────────────────────────────────────────────── */
+
+.wachlarz {
+  position: relative;
+  height: clamp(300px, 42vw, 440px);
+  perspective: 1400px;
+}
+
+.wachlarz-kartka {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(170px, 22vw, 250px);
+  translate: -50% -50%;
+  rotate: var(--obrot);
+  transform-origin: 50% 120%;
+  transition:
+    rotate 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 400ms ease-out;
+}
+
+.wachlarz-kartka:hover,
+.wachlarz-kartka:focus-visible {
+  translate: -50% calc(-50% - 22px);
+  z-index: 5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wachlarz-kartka {
+    animation: wachlarz-rozloz 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--opoznienie, 0ms);
+  }
+}
+
+@keyframes wachlarz-rozloz {
+  from {
+    rotate: 0deg;
+  }
+}
+
+/* ─── Bilet zlecenia druku (panel pobierania) ─────────────────────── */
+
+.bilet {
+  --perforacja: 7px;
+  background: var(--bilet);
+  color: var(--bilet-tekst);
+  border-radius: 4px;
+  /* Perforacja na górnej i dolnej krawędzi — wycięte półkola. */
+  mask:
+    radial-gradient(circle at 50% 0, transparent 4px, black 4.5px) top / 14px 51% repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 4px, black 4.5px) bottom / 14px 51% repeat-x;
+}
+
+.bilet-linia {
+  border: 0;
+  border-top: 1.5px dashed color-mix(in oklch, var(--bilet-cichy) 50%, transparent);
+}
+
+.bilet dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+}
+
+.bilet dt {
+  color: var(--bilet-cichy);
+  font-size: 0.8125rem;
+}
+
+.bilet dd {
+  font-weight: 600;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.przycisk-druku {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 22px;
+  border-radius: 6px;
+  background: var(--bilet-tekst);
+  color: var(--bilet);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  transition:
+    background-color 200ms ease-out,
+    translate 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.przycisk-druku:hover {
+  background: color-mix(in oklch, var(--bilet-tekst) 86%, var(--teczka));
+  translate: 0 -1px;
+}
+
+.przycisk-druku:active {
+  translate: 0 1px;
+}
+
+.przycisk-druku:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.przelacznik-wariantu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--bilet-cichy) 14%, transparent);
+}
+
+.przelacznik-wariantu button {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--bilet-cichy);
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.przelacznik-wariantu button[aria-pressed='true'] {
+  background: var(--bilet);
+  color: var(--bilet-tekst);
+  box-shadow: 0 1px 3px oklch(0.2 0.03 60 / 0.18);
+}
+
+/* Pieczątka „Pobrane” — odbita lekko krzywo. */
+.pieczatka {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  rotate: -4deg;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pieczatka[data-swieza='true'] {
+    animation: pieczatka-odbij 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+}
+
+@keyframes pieczatka-odbij {
+  from {
+    scale: 1.8;
+    opacity: 0;
+    rotate: -14deg;
+  }
+}
+
+/* ─── Teczka ──────────────────────────────────────────────────────── */
+
+.teczka-zakladka {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 10px 14px;
+  border-radius: 10px 10px 10px 4px;
+  background: var(--teczka);
+  color: var(--teczka-tekst);
+  font-weight: 700;
+  font-size: 0.875rem;
+  box-shadow:
+    0 2px 4px oklch(0.2 0.04 60 / 0.25),
+    0 12px 28px -8px oklch(0.15 0.04 60 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .teczka-zakladka[data-podskok='true'] {
+    animation: teczka-podskok 520ms cubic-bezier(0.2, 1.3, 0.4, 1);
+  }
+}
+
+@keyframes teczka-podskok {
+  30% {
+    translate: 0 -8px;
+    scale: 1.06;
+  }
+}
+
+.teczka-licznik {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--teczka-tekst);
+  color: var(--teczka);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+}
+
+.teczka-panel {
+  background: var(--teczka);
+  color: var(--teczka-tekst);
+  border-radius: 4px 14px 14px 14px;
+  box-shadow:
+    0 2px 6px oklch(0.2 0.04 60 / 0.25),
+    0 24px 48px -12px oklch(0.12 0.04 60 / 0.55);
+}
+
+/* ─── Fiszki na ekranie: obracane karty ───────────────────────────── */
+
+.fiszka-ekran {
+  perspective: 1200px;
+  aspect-ratio: 95 / 70;
+}
+
+.fiszka-ekran-obrot {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fiszka-ekran[data-odwrocona='true'] .fiszka-ekran-obrot {
+  transform: rotateY(180deg);
+}
+
+.fiszka-ekran-strona {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.fiszka-ekran-strona[data-strona='rewers'] {
+  transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fiszka-ekran-obrot {
+    transition: none;
+  }
+}
+
+/* ─── Filtr rodzaju (hub) ─────────────────────────────────────────── */
+
+[data-filtr='sciaga'] [data-rodzaj='fiszki'],
+[data-filtr='fiszki'] [data-rodzaj='sciaga'] {
+  display: none;
+}
+
+/* ═══ KARTKA ═══════════════════════════════════════════════════════
+   Sam materiał. Zawsze biały papier, ciemny tusz, kolor przedmiotu
+   jako „farba drukarska”. Jednostki: cqw kartki.
+*/
+
+.kartka,
+.kartka-kolory {
+  --papier: #fff;
+  --druk: oklch(0.22 0.02 260);
+  --druk-cichy: oklch(0.42 0.02 260);
+  --tusz: oklch(0.5 0.19 262);
+  --tusz-jasny: oklch(0.955 0.025 262);
+  --tusz-sredni: oklch(0.86 0.06 262);
+  --ciecie: oklch(0.72 0.01 260);
+}
+
+.kartka {
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 210 / 297;
+  overflow: hidden;
+  background: var(--papier);
+  color: var(--druk);
+  font-family: var(--font-kartka), var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  forced-color-adjust: none;
+}
+
+[data-przedmiot='informatyka'] {
+  --tusz: oklch(0.5 0.12 175);
+  --tusz-jasny: oklch(0.96 0.02 175);
+  --tusz-sredni: oklch(0.86 0.05 175);
+}
+
+[data-przedmiot='historia'] {
+  --tusz: oklch(0.48 0.14 30);
+  --tusz-jasny: oklch(0.96 0.02 30);
+  --tusz-sredni: oklch(0.86 0.05 30);
+}
+
+[data-przedmiot='jezyk-polski'] {
+  --tusz: oklch(0.47 0.17 305);
+  --tusz-jasny: oklch(0.96 0.02 305);
+  --tusz-sredni: oklch(0.86 0.06 305);
+}
+
+/* Ułamek piętrowy w tekście. */
+.ulamek {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 0.12em;
+  font-size: 0.86em;
+  line-height: 1.02;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.ulamek > span:first-child {
+  padding: 0 0.18em 0.06em;
+  border-bottom: 0.09em solid currentColor;
+}
+
+.ulamek > span:last-child {
+  padding-top: 0.06em;
+}
+
+.ulamek-calosc {
+  font-variant-numeric: lining-nums;
+}
+
+/* ─── Ściąga ─── */
+
+.sciaga {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 4.6cqw 5cqw 3.6cqw;
+  font-size: 1.68cqw;
+  line-height: 1.32;
+}
+
+.sciaga-pasek-kontrolny {
+  position: absolute;
+  top: 4.6cqw;
+  bottom: 3.6cqw;
+  right: 1.6cqw;
+  width: 1.1cqw;
+  display: grid;
+  grid-template-rows: repeat(5, 3.2cqw) 1fr;
+  gap: 0.5cqw;
+}
+
+.sciaga-pasek-kontrolny i {
+  border-radius: 0.2cqw;
+  background: var(--tusz);
+}
+
+.sciaga-pasek-kontrolny i:nth-child(2) {
+  opacity: 0.7;
+}
+.sciaga-pasek-kontrolny i:nth-child(3) {
+  opacity: 0.45;
+}
+.sciaga-pasek-kontrolny i:nth-child(4) {
+  opacity: 0.22;
+}
+.sciaga-pasek-kontrolny i:nth-child(5) {
+  background: var(--druk);
+}
+.sciaga-pasek-kontrolny i:nth-child(6) {
+  background: none;
+  border-left: 0.15cqw dashed var(--ciecie);
+  justify-self: center;
+  width: 0;
+}
+
+.sciaga-naglowek {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 3cqw;
+  padding-bottom: 2.2cqw;
+  border-bottom: 0.35cqw solid var(--druk);
+}
+
+.sciaga-metka {
+  font-size: 1.35cqw;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tusz);
+}
+
+.sciaga-tytul {
+  margin-top: 0.6cqw;
+  font-size: 5.4cqw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.sciaga-stempel {
+  display: grid;
+  justify-items: center;
+  gap: 0.4cqw;
+  padding: 1cqw 1.6cqw;
+  border: 0.3cqw solid var(--tusz);
+  border-radius: 0.8cqw;
+  rotate: -3deg;
+  color: var(--tusz);
+  font-size: 1.1cqw;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.sciaga-stempel b {
+  font-size: 2.2cqw;
+  letter-spacing: 0;
+}
+
+.sciaga-zdanie {
+  margin-top: 2.4cqw;
+  padding: 1.8cqw 2.4cqw;
+  border-radius: 1cqw;
+  background: var(--tusz-jasny);
+  font-size: 2.15cqw;
+  font-weight: 700;
+  line-height: 1.28;
+  text-wrap: balance;
+}
+
+.sciaga-reguly {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 3.6cqw;
+  margin-top: 1.4cqw;
+  align-content: start;
+}
+
+.regula {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: start;
+  gap: 0.4cqw 1.6cqw;
+  padding: 1.45cqw 0;
+  border-bottom: 0.15cqw solid var(--tusz-sredni);
+  break-inside: avoid;
+}
+
+.regula-tytul {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 1cqw;
+  font-size: 1.9cqw;
+  font-weight: 700;
+  color: var(--tusz);
+}
+
+.regula-tytul span {
+  font-size: 1.3cqw;
+  font-variant-numeric: tabular-nums;
+  color: var(--druk-cichy);
+}
+
+.regula-tekst {
+  text-wrap: pretty;
+}
+
+.regula-przyklad {
+  grid-column: 1 / -1;
+  margin-top: 0.6cqw;
+  font-size: 1.95cqw;
+  font-weight: 700;
+  white-space: pre-wrap;
+  word-spacing: 0.1em;
+}
+
+.regula-schemat {
+  grid-row: span 2;
+  align-self: center;
+  width: 14cqw;
+}
+
+.regula[data-schemat='os'] .regula-schemat,
+.regula[data-schemat='pasek'] .regula-schemat {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  width: 100%;
+  margin-top: 0.8cqw;
+}
+
+.sciaga-pulapki {
+  margin-top: 2cqw;
+}
+
+.sciaga-pulapki-tytul {
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  font-size: 1.9cqw;
+  font-weight: 700;
+}
+
+.sciaga-pulapki-tytul svg {
+  width: 2.4cqw;
+  height: 2.4cqw;
+  color: var(--tusz);
+}
+
+.sciaga-pulapki ul {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.6cqw;
+  margin-top: 1.2cqw;
+}
+
+.pulapka {
+  display: grid;
+  gap: 0.7cqw;
+  align-content: start;
+  padding: 1.6cqw 1.8cqw;
+  border: 0.2cqw dashed var(--druk-cichy);
+  border-radius: 1cqw;
+  font-size: 1.5cqw;
+}
+
+.pulapka-tytul {
+  font-weight: 700;
+  font-size: 1.6cqw;
+}
+
+.pulapka-zle,
+.pulapka-dobrze {
+  display: flex;
+  align-items: center;
+  gap: 0.8cqw;
+  font-size: 1.75cqw;
+  font-weight: 700;
+}
+
+.pulapka-zle {
+  color: var(--druk-cichy);
+}
+
+.pulapka-zle > span:last-child {
+  text-decoration: line-through;
+  text-decoration-thickness: 0.18cqw;
+}
+
+.pulapka-znak {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2.2cqw;
+  height: 2.2cqw;
+  border-radius: 50%;
+  font-size: 1.3cqw;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.pulapka-znak svg {
+  width: 70%;
+  height: 70%;
+}
+
+.pulapka-zle .pulapka-znak {
+  border: 0.18cqw solid currentColor;
+}
+
+.pulapka-dobrze .pulapka-znak {
+  background: var(--tusz);
+  color: var(--papier);
+}
+
+.pulapka-dlaczego {
+  color: var(--druk-cichy);
+  text-wrap: pretty;
+}
+
+.sciaga-stopka {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2cqw;
+  margin-top: 2cqw;
+  padding-top: 1.6cqw;
+  border-top: 0.15cqw solid var(--druk);
+  font-size: 1.3cqw;
+  color: var(--druk-cichy);
+}
+
+.sciaga-stopka svg {
+  width: 7.4cqw;
+  height: 7.4cqw;
+}
+
+.sciaga-stopka b {
+  display: block;
+  color: var(--druk);
+  font-size: 1.5cqw;
+}
+
+.sciaga-stopka-marka {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 800;
+  font-size: 2cqw;
+  letter-spacing: -0.03em;
+  color: var(--druk);
+}
+
+/* Na wąskim ekranie (telefon) ściąga przestaje udawać A4 i płynie jak
+   zwykła strona — inaczej tekst byłby nieczytelnie mały. Miniatury
+   (data-tryb="miniatura") zawsze zostają kartką. */
+@container kartka-ramka (max-width: 560px) {
+  .kartka[data-tryb='czytaj'] {
+    aspect-ratio: auto;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga {
+    padding: 22px 18px 20px;
+    font-size: 15px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-pasek-kontrolny {
+    display: none;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-naglowek {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom-width: 2px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-metka {
+    font-size: 11px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-tytul {
+    font-size: 30px;
+    margin-top: 4px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-stempel {
+    justify-self: start;
+    grid-auto-flow: column;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 10px;
+    border-width: 2px;
+    border-radius: 5px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-stempel b {
+    font-size: 12px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-zdanie {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 17px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-reguly {
+    grid-template-columns: 1fr;
+    margin-top: 8px;
+  }
+
+  .kartka[data-tryb='czytaj'] .regula {
+    gap: 4px 12px;
+    padding: 14px 0;
+    border-bottom-width: 1px;
+  }
+
+  .kartka[data-tryb='czytaj'] .regula-tytul {
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  .kartka[data-tryb='czytaj'] .regula-tytul span {
+    font-size: 12px;
+  }
+
+  .kartka[data-tryb='czytaj'] .regula-przyklad {
+    margin-top: 6px;
+    font-size: 17px;
+  }
+
+  .kartka[data-tryb='czytaj'] .regula-schemat {
+    width: 96px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-pulapki {
+    margin-top: 18px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-pulapki-tytul {
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-pulapki-tytul svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-pulapki ul {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .kartka[data-tryb='czytaj'] .pulapka {
+    gap: 6px;
+    padding: 12px 14px;
+    border-width: 1.5px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .kartka[data-tryb='czytaj'] .pulapka-tytul {
+    font-size: 15px;
+  }
+
+  .kartka[data-tryb='czytaj'] .pulapka-zle,
+  .kartka[data-tryb='czytaj'] .pulapka-dobrze {
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  .kartka[data-tryb='czytaj'] .pulapka-znak {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+
+  .kartka[data-tryb='czytaj'] .pulapka-znak svg {
+  width: 70%;
+  height: 70%;
+}
+
+.pulapka-zle .pulapka-znak {
+    border-width: 1.5px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-stopka {
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top-width: 1px;
+    font-size: 12px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-stopka svg {
+    width: 56px;
+    height: 56px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-stopka b {
+    font-size: 13px;
+  }
+
+  .kartka[data-tryb='czytaj'] .sciaga-stopka-marka {
+    display: none;
+  }
+}
+
+.kartka-ramka {
+  container: kartka-ramka / inline-size;
+}
+
+/* ─── Schematy ─── */
+
+.schemat-pasek {
+  display: flex;
+  height: 3.2cqw;
+  border: 0.22cqw solid var(--druk);
+  border-radius: 0.4cqw;
+  overflow: hidden;
+}
+
+.schemat-pasek i {
+  flex: 1;
+  border-left: 0.16cqw solid var(--druk);
+}
+
+.schemat-pasek i:first-child {
+  border-left: 0;
+}
+
+.schemat-pasek i[data-pelny='true'] {
+  background: var(--tusz);
+}
+
+.schemat-kolo {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.schemat-os {
+  position: relative;
+  height: 7.4cqw;
+  margin: 0 2cqw;
+}
+
+.schemat-os-linia {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4.6cqw;
+  border-top: 0.22cqw solid var(--druk);
+}
+
+.schemat-os-kreska {
+  position: absolute;
+  top: 3.9cqw;
+  height: 1.5cqw;
+  border-left: 0.16cqw solid var(--druk);
+  translate: -50% 0;
+}
+
+.schemat-os-kreska[data-calosc='true'] {
+  top: 3.4cqw;
+  height: 2.5cqw;
+  border-left-width: 0.26cqw;
+}
+
+.schemat-os-liczba {
+  position: absolute;
+  top: 6cqw;
+  translate: -50% 0;
+  font-size: 1.4cqw;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.schemat-os-punkt {
+  position: absolute;
+  top: 4.6cqw;
+  width: 1.4cqw;
+  height: 1.4cqw;
+  border-radius: 50%;
+  background: var(--tusz);
+  translate: -50% -50%;
+}
+
+.schemat-os-podpis {
+  position: absolute;
+  bottom: 3.6cqw;
+  translate: -50% 0;
+  font-size: 1.5cqw;
+  font-weight: 700;
+  color: var(--tusz);
+  line-height: 1;
+}
+
+/* Słupek: kratki zeszytu rysuje odstęp siatki na tle w kolorze linii. */
+.schemat-slupek {
+  --kratka: 2.15cqw;
+  --linia: 0.1cqw;
+  display: grid;
+  grid-auto-rows: var(--kratka);
+  gap: var(--linia);
+  width: max-content;
+  padding: var(--linia);
+  background: var(--tusz-sredni);
+  font-size: calc(var(--kratka) * 0.78);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.schemat-slupek-wiersz {
+  display: contents;
+}
+
+.schemat-slupek-wiersz > span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--papier);
+}
+
+.schemat-slupek-wiersz[data-kreska='true'] > span {
+  box-shadow: inset 0 calc(var(--kratka) * 0.09) 0 var(--druk);
+}
+
+.schemat-slupek-wiersz[data-male='true'] > span {
+  align-items: flex-end;
+  font-size: calc(var(--kratka) * 0.5);
+  color: var(--tusz);
+}
+
+.schemat-slupek-znak {
+  color: var(--tusz);
+}
+
+/* Kropka mnożenia w kroju kartki jest drobna — w kratce musi być widać znak. */
+.schemat-slupek-znak[data-znak='·'] {
+  font-size: 1.7em;
+}
+
+.schemat-slupek-wiersz > span[data-dlugi='true'] {
+  letter-spacing: -0.04em;
+}
+
+.schemat-slupek-wiersz > span[data-skreslona='true']::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  border-top: calc(var(--kratka) * 0.11) solid var(--tusz);
+  rotate: -35deg;
+}
+
+/* Przecinek na linii między kratkami, nie we własnej kratce — tak jak w zeszycie.
+   z-index, bo tło następnej kratki malowałoby się na nim. */
+.schemat-slupek-wiersz > span[data-przecinek='true']::before {
+  content: ',';
+  position: absolute;
+  z-index: 1;
+  right: calc(var(--kratka) * -0.13 - var(--linia) / 2);
+  bottom: calc(var(--kratka) * 0.02);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.schemat-slupek sup {
+  font-size: 0.55em;
+  color: var(--tusz);
+  translate: 0 -0.35em;
+}
+
+.regula[data-schemat='slupek'] .regula-schemat {
+  width: auto;
+}
+
+/* Geometria: SVG w ramce o proporcjach rysunku, podpisy w HTML nad nim.
+   Ramka bierze szerokość slotu, a w rzędach (kąty) — wysokość --geo-h. */
+.schemat-geo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--geo-r);
+}
+
+.schemat-geo svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.schemat-geo-podpis {
+  position: absolute;
+  translate: -50% -50%;
+  font-size: 1.5cqw;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--druk);
+}
+
+.schemat-geo-podpis[data-kotwica='lewo'] {
+  translate: 0 -50%;
+}
+
+.schemat-geo-podpis[data-kotwica='prawo'] {
+  translate: -100% -50%;
+}
+
+.regula[data-schemat='okrag'] .regula-schemat {
+  width: 10cqw;
+}
+
+.regula[data-schemat='kat'] .regula-schemat {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  width: auto;
+  margin-top: 0.8cqw;
+}
+
+.regula[data-schemat='kat'] .schemat-geo {
+  --geo-h: 7cqw;
+  width: calc(var(--geo-h) * var(--geo-r));
+  max-width: 100%;
+}
+
+.regula[data-schemat='drabinka'] .regula-schemat {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  width: 100%;
+  margin-top: 0.8cqw;
+}
+
+/* Drabinka jednostek: szczeble w ramkach, krok między nimi. */
+.schemat-drabinka {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.6cqw;
+  font-size: 1.55cqw;
+  line-height: 1;
+  color: var(--druk);
+}
+
+.schemat-drabinka-szczebel {
+  display: flex;
+  align-items: center;
+}
+
+.schemat-drabinka b {
+  padding: 0.45cqw 0.7cqw;
+  border: 0.18cqw solid var(--druk);
+  border-radius: 0.4cqw;
+  background: var(--tusz-jasny);
+  font-weight: 700;
+}
+
+.schemat-drabinka-krok {
+  padding: 0 0.5cqw;
+  font-size: 0.8em;
+  font-weight: 700;
+  color: var(--tusz);
+}
+
+.schemat-drabinka-krok::after {
+  content: ' →';
+}
+
+/* Na wąskim ekranie schematy dostają piksele zamiast cqw. */
+@container kartka-ramka (max-width: 560px) {
+  .kartka[data-tryb='czytaj'] .regula[data-schemat='slupek'] .regula-schemat {
+    width: auto;
+  }
+  .kartka[data-tryb='czytaj'] .regula[data-schemat='okrag'] .regula-schemat {
+    width: 84px;
+  }
+  .kartka[data-tryb='czytaj'] .regula[data-schemat='kat'] .regula-schemat {
+    width: auto;
+  }
+  .kartka[data-tryb='czytaj'] .regula[data-schemat='kat'] .schemat-geo {
+    --geo-h: 52px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-geo-podpis {
+    font-size: 11px;
+  }
+  .kartka[data-tryb='czytaj'] .regula[data-schemat='drabinka'] .regula-schemat {
+    width: 100%;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-drabinka {
+    row-gap: 6px;
+    font-size: 12px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-drabinka b {
+    padding: 3px 5px;
+    border-width: 1.5px;
+    border-radius: 3px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-drabinka-krok {
+    padding: 0 4px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-slupek {
+    --kratka: 19px;
+    --linia: 1px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-pasek {
+    height: 22px;
+    border-width: 1.5px;
+    border-radius: 3px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-pasek i {
+    border-left-width: 1px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os {
+    height: 58px;
+    margin: 0 12px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os-linia {
+    top: 34px;
+    border-top-width: 1.5px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os-kreska {
+    top: 29px;
+    height: 10px;
+    border-left-width: 1px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os-kreska[data-calosc='true'] {
+    top: 26px;
+    height: 16px;
+    border-left-width: 2px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os-liczba {
+    top: 45px;
+    font-size: 12px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os-punkt {
+    top: 34px;
+    width: 10px;
+    height: 10px;
+  }
+  .kartka[data-tryb='czytaj'] .schemat-os-podpis {
+    bottom: 28px;
+    font-size: 13px;
+  }
+}
+
+/* ─── Arkusz fiszek (strona A4, 2 × 4 karty) ─── */
+
+.arkusz-fiszek {
+  position: absolute;
+  inset: 4.4cqw 4.76cqw;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(4, 1fr);
+}
+
+/* Linie cięcia: przerywane, wspólne dla sąsiednich kart. */
+.arkusz-fiszek > * {
+  border-right: 0.12cqw dashed var(--ciecie);
+  border-bottom: 0.12cqw dashed var(--ciecie);
+}
+
+.arkusz-fiszek > :nth-child(-n + 2) {
+  border-top: 0.12cqw dashed var(--ciecie);
+}
+
+.arkusz-fiszek > :nth-child(odd) {
+  border-left: 0.12cqw dashed var(--ciecie);
+}
+
+.arkusz-fiszek[data-wariant='skladane'] > :nth-child(odd) {
+  border-right: 0.16cqw dotted var(--tusz);
+}
+
+.arkusz-instrukcja {
+  position: absolute;
+  left: 4.76cqw;
+  right: 4.76cqw;
+  bottom: 1.3cqw;
+  display: flex;
+  justify-content: space-between;
+  gap: 2cqw;
+  font-size: 1.15cqw;
+  color: var(--druk-cichy);
+}
+
+.arkusz-instrukcja svg {
+  display: inline;
+  width: 1.5cqw;
+  height: 1.5cqw;
+  vertical-align: -0.3cqw;
+  margin-right: 0.5cqw;
+}
+
+/* Znaczniki cięcia na marginesach strony, na przedłużeniu linii. */
+.arkusz-znacznik {
+  position: absolute;
+  background: var(--druk-cichy);
+}
+
+/* Karta — liczy w cqw własnej szerokości (95 mm na wydruku). */
+.fiszka {
+  container-type: inline-size;
+  position: relative;
+  overflow: hidden;
+  background: var(--papier);
+  color: var(--druk);
+  font-family: var(--font-kartka), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.fiszka-wnetrze {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6cqw 7cqw 5cqw;
+}
+
+.fiszka-metka {
+  display: flex;
+  justify-content: space-between;
+  font-size: 3.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tusz);
+  font-variant-numeric: tabular-nums;
+}
+
+.fiszka-tresc {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4cqw;
+  text-align: center;
+}
+
+.fiszka-pytanie {
+  font-size: 6.6cqw;
+  font-weight: 700;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+.fiszka-odpowiedz {
+  font-size: 9cqw;
+  font-weight: 700;
+  line-height: 1.12;
+  color: var(--tusz);
+  text-wrap: balance;
+}
+
+.fiszka-odpowiedz:has(+ .fiszka-wyjasnienie) {
+  margin-bottom: -1cqw;
+}
+
+.fiszka-odpowiedz[data-dluga='true'] {
+  font-size: 6.4cqw;
+}
+
+.fiszka-wyjasnienie {
+  font-size: 4.6cqw;
+  line-height: 1.3;
+  color: var(--druk-cichy);
+  text-wrap: balance;
+}
+
+.fiszka-schemat {
+  width: 70%;
+  margin: 0 auto;
+}
+
+/* Schematy na fiszce liczą w cqw KARTY — przeskalowane. */
+.fiszka .schemat-pasek {
+  height: 9cqw;
+  border-width: 0.6cqw;
+  border-radius: 1cqw;
+}
+.fiszka .schemat-pasek i {
+  border-left-width: 0.45cqw;
+}
+.fiszka .schemat-os {
+  height: 17cqw;
+  margin: 0 3cqw;
+}
+.fiszka .schemat-os-linia {
+  top: 9cqw;
+  border-top-width: 0.6cqw;
+}
+.fiszka .schemat-os-kreska {
+  top: 7.5cqw;
+  height: 3.2cqw;
+  border-left-width: 0.45cqw;
+}
+.fiszka .schemat-os-kreska[data-calosc='true'] {
+  top: 6.5cqw;
+  height: 5.2cqw;
+  border-left-width: 0.7cqw;
+}
+.fiszka .schemat-os-liczba {
+  top: 12.6cqw;
+  font-size: 4cqw;
+}
+.fiszka .schemat-os-punkt {
+  top: 9cqw;
+  width: 3.4cqw;
+  height: 3.4cqw;
+}
+.fiszka .schemat-os-podpis {
+  bottom: 9.6cqw;
+  font-size: 4.6cqw;
+}
+
+.fiszka .schemat-geo {
+  --geo-h: 24cqw;
+  width: calc(var(--geo-h) * var(--geo-r));
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Na rewersie rysunek dzieli kartę z odpowiedzią i wyjaśnieniem. */
+.fiszka[data-strona='rewers'] .schemat-geo {
+  --geo-h: 17cqw;
+}
+
+.fiszka .schemat-geo-podpis {
+  font-size: 4.4cqw;
+}
+
+.fiszka .schemat-slupek {
+  --kratka: 5.2cqw;
+  --linia: 0.3cqw;
+  margin: 0 auto;
+}
+
+.fiszka .schemat-drabinka {
+  justify-content: center;
+  row-gap: 2cqw;
+  font-size: 4.4cqw;
+}
+
+.fiszka .schemat-drabinka b {
+  padding: 1.2cqw 1.8cqw;
+  border-width: 0.45cqw;
+  border-radius: 1cqw;
+}
+
+.fiszka .schemat-drabinka-krok {
+  padding: 0 1.2cqw;
+}
+
+.fiszka-stopka {
+  display: flex;
+  justify-content: space-between;
+  font-size: 3cqw;
+  color: var(--druk-cichy);
+}
+
+.fiszka[data-strona='rewers'] .fiszka-wnetrze {
+  background:
+    radial-gradient(circle at 100% 0, var(--tusz-jasny) 0 22cqw, transparent 22.2cqw);
+}
+
+/* Fiszka na ekranie — ta sama karta, zaokrąglona i z cieniem. */
+.fiszka-ekran .fiszka {
+  height: 100%;
+  border-radius: 10px;
+}

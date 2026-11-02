@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# Blokuje wciąganie dużych binariów do public/.
+#
+# Kontekst: repo niosło kiedyś 108 MB obrazów lekcji, co rozdmuchało historię
+# gita i przepalało limit transformacji Vercela. Obrazy kursu mieszkają teraz na
+# Cloudinary (npm run media:publish), a pliki zostające lokalnie mają być
+# skompresowane (npm run media:optimize-local), bo nikt ich już po drodze nie
+# zmniejsza.
+#
+# Instalacja: git config core.hooksPath .githooks   (robi to `npm install`)
+# Obejście na jeden commit: git commit --no-verify
+
+MAX_KB="${MEDIA_MAX_KB:-250}"
+status=0
+
+# tylko pliki dodane/zmienione, nie usuwane
+files=$(git diff --cached --name-only --diff-filter=AM -- 'public/')
+
+for f in $files; do
+  case "$f" in
+    public/audio/*|public/video/*) continue ;;  # do przeniesienia osobno, patrz plan mediów
+  esac
+
+  case "$f" in
+    public/images/matematyka/*)
+      echo "BLOKADA: $f"
+      echo "  Obrazy kursu matematyki nie wracają do repo — opublikuj je:"
+      echo "    npm run media:publish -- --lesson <slug>"
+      status=1
+      continue
+      ;;
+  esac
+
+  [ -f "$f" ] || continue
+  kb=$(( $(wc -c < "$f") / 1024 ))
+  if [ "$kb" -gt "$MAX_KB" ]; then
+    echo "BLOKADA: $f — ${kb} kB, limit ${MAX_KB} kB"
+    echo "  Skompresuj: npm run media:optimize-local"
+    echo "  Albo, jeśli to ilustracja kursu: npm run media:publish -- --lesson <slug>"
+    status=1
+  fi
+done
+
+if [ "$status" -ne 0 ]; then
+  echo ""
+  echo "Commit wstrzymany. Świadomy wyjątek: git commit --no-verify"
+fi
+
+exit $status

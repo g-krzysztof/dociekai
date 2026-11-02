@@ -1,0 +1,1250 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'swiper/css';
+@import 'swiper/css/navigation';
+
+/* Tailwind v4: safelist dynamic color utilities used via variables/props */
+@source inline("{,dark:,hover:,dark:hover:}{bg-,text-,border-}{slate,gray,zinc,neutral,stone,red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose}-{50,{100..900..100},950}");
+
+/* Safelist for custom theme colors with opacity */
+@source inline("{,dark:,hover:,dark:hover:}{bg-,text-,border-}{primary,secondary,accent,muted,destructive,success,warning,info}/{5,10,20,30,40,50,60,70,80,90,95}");
+
+@custom-variant dark (&:is(.dark *));
+
+@keyframes ab-stroke-run {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  40% {
+    stroke-dashoffset: -100;
+    opacity: 1;
+  }
+  52% {
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+@keyframes ab-shine-sweep {
+  0% {
+    transform: translateX(-140%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.65;
+  }
+  45% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateX(140%);
+    opacity: 0;
+  }
+}
+
+@keyframes ab-glow-pulse {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.35;
+    transform: scale(0.98);
+  }
+}
+
+@layer components {
+  /* Root wrapper: owns SVG border, keeps Slot/asChild valid. */
+  [data-animated-button].ab-root {
+    --ab-border: 1.5px;
+    --ab-duration: 3.6s;
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    border-radius: var(--radius-md);
+    isolation: isolate;
+  }
+
+  /* SVG border container */
+  [data-animated-button] .ab-border-svg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+  }
+
+  [data-animated-button] .ab-stroke-base,
+  [data-animated-button] .ab-stroke-shimmer {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-width: var(--ab-border);
+  }
+
+  [data-animated-button] .ab-stroke-base {
+    opacity: 0.9;
+    stroke: color-mix(in oklch, var(--ab-shimmer-color, var(--primary)) 25%, transparent);
+  }
+
+  [data-animated-button] .ab-stroke-shimmer {
+    stroke-linecap: round;
+    stroke: color-mix(in oklch, var(--ab-shimmer-color, var(--primary)) 85%, black 15%);
+    filter: drop-shadow(0 0 6px color-mix(in oklch, var(--ab-shimmer-color, var(--primary)) 70%, transparent));
+
+    stroke-dasharray: 10 90;
+    animation: ab-stroke-run var(--ab-duration) ease-in-out infinite;
+  }
+
+  /* Glow halo (behind everything) */
+  [data-animated-button] .ab-glow {
+    position: absolute;
+    inset: var(--ab-glow-inset, -24px);
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        70% 100% at 50% 50%,
+        color-mix(in oklch, var(--ab-glow-color, var(--primary)) 50%, transparent) 0%,
+        color-mix(in oklch, var(--ab-glow-color, var(--primary)) 20%, transparent) 40%,
+        transparent 70%
+      );
+    filter: blur(8px);
+    animation: ab-glow-pulse 2.4s ease-in-out infinite;
+  }
+
+  [data-animated-button]:has(:disabled) .ab-glow {
+    opacity: 0;
+    animation: none;
+  }
+
+  /* Shine sweep over the button surface */
+  [data-animated-button] .ab-shine {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    background: linear-gradient(
+      105deg,
+      transparent 20%,
+      color-mix(in oklch, var(--primary-foreground) 40%, transparent) 50%,
+      transparent 80%
+    );
+    animation: ab-shine-sweep 2.8s ease-in-out infinite;
+    opacity: 0.55;
+  }
+
+  [data-animated-button]:has(:disabled) .ab-shine {
+    opacity: 0;
+    animation: none;
+  }
+
+  [data-animated-button][data-animation='none'] .ab-button {
+    border-radius: var(--radius-md);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-yellow: var(--yellow);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --prompt-textarea-max-height: 400px;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0.08 25);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.08 25);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.08 25);
+  --primary: oklch(0.6 0.18 35);
+  --primary-foreground: oklch(0.98 0.02 35);
+   --secondary: oklch(0.968 0.007 247.896);
+  /* --secondary: oklch(0.92 0.05 25); */
+  --secondary-foreground: oklch(0.3 0.12 25);
+  --muted: oklch(0.94 0.03 30);
+  --muted-foreground: oklch(0.5 0.1 25);
+  /* --accent: oklch(0.85 0.08 20); */
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.25 0.1 25);
+  --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.6 0.18 150);
+  --success-foreground: oklch(0.98 0.02 150);
+  --warning: oklch(0.75 0.15 45);
+  --warning-foreground: oklch(0.2 0.08 25);
+  --info: oklch(0.55 0.12 200);
+  --info-foreground: oklch(0.98 0.02 200);
+  /* --border: oklch(0.9 0.04 25);
+  --input: oklch(0.9 0.04 25); */
+    --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.6 0.18 35);
+  --chart-1: oklch(0.65 0.2 35);
+  --chart-2: oklch(0.7 0.18 25);
+  --chart-3: oklch(0.55 0.15 15);
+  --chart-4: oklch(0.75 0.22 40);
+  --chart-5: oklch(0.6 0.16 20);
+  --sidebar: oklch(0.97 0.02 30);
+  --sidebar-foreground: oklch(0.2 0.08 25);
+  --sidebar-primary: oklch(0.6 0.18 35);
+  --sidebar-primary-foreground: oklch(0.98 0.02 35);
+  --sidebar-accent: oklch(0.85 0.08 20);
+  --sidebar-accent-foreground: oklch(0.25 0.1 25);
+  --sidebar-border: oklch(0.9 0.04 25);
+  --sidebar-ring: oklch(0.6 0.18 35);
+  --yellow: oklch(95.212% 0.17793 106.254);
+}
+
+.dark {
+  --background: oklch(0.12 0.04 25);
+  --foreground: oklch(0.95 0.03 30);
+  --card: oklch(0.18 0.06 25);
+  --card-foreground: oklch(0.95 0.03 30);
+  --popover: oklch(0.18 0.06 25);
+  --popover-foreground: oklch(0.95 0.03 30);
+  --primary: oklch(0.75 0.2 35);
+  --primary-foreground: oklch(0.15 0.05 25);
+  --secondary: oklch(0.25 0.08 25);
+  --secondary-foreground: oklch(0.9 0.04 30);
+  --muted: oklch(0.25 0.08 25);
+  --muted-foreground: oklch(0.7 0.1 30);
+  --accent: oklch(0.35 0.1 20);
+  --accent-foreground: oklch(0.9 0.04 30);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.7 0.18 150);
+  --success-foreground: oklch(0.15 0.05 25);
+  --warning: oklch(0.8 0.18 45);
+  --warning-foreground: oklch(0.15 0.05 25);
+  --info: oklch(0.65 0.15 200);
+  --info-foreground: oklch(0.15 0.05 25);
+  --border: oklch(0.3 0.08 25);
+  --input: oklch(0.25 0.06 25);
+  --ring: oklch(0.75 0.2 35);
+  --chart-1: oklch(0.7 0.22 35);
+  --chart-2: oklch(0.75 0.2 25);
+  --chart-3: oklch(0.65 0.18 15);
+  --chart-4: oklch(0.8 0.24 40);
+  --chart-5: oklch(0.6 0.16 20);
+  --sidebar: oklch(0.18 0.06 25);
+  --sidebar-foreground: oklch(0.95 0.03 30);
+  --sidebar-primary: oklch(0.75 0.2 35);
+  --sidebar-primary-foreground: oklch(0.15 0.05 25);
+  --sidebar-accent: oklch(0.35 0.1 20);
+  --sidebar-accent-foreground: oklch(0.9 0.04 30);
+  --sidebar-border: oklch(0.3 0.08 25);
+  --sidebar-ring: oklch(0.75 0.2 35);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Swiper custom styles */
+.swiper-nav-item {
+  outline: none !important;
+  border: 1px solid var(--border) !important;
+}
+
+.swiper-nav-item:focus {
+  outline: none !important;
+}
+
+.swiper-nav-item:hover {
+    box-shadow: none !important;
+}
+
+.swiper-slide {
+  outline: none !important;
+  border: none !important;
+}
+
+/* Custom thin scrollbar for sidebars */
+.custom-scrollbar {
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: oklch(0.7 0.05 25 / 0.2) transparent !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 2px !important;
+  height: 2px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  width: 2px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0.05 25 / 0.2) !important;
+  border-radius: 1px !important;
+  width: 2px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.6 0.08 25 / 0.4) !important;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: oklch(0.5 0.05 25 / 0.3) transparent !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.5 0.05 25 / 0.3) !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.6 0.08 25 / 0.5) !important;
+}
+
+/* ============================================================
+   /facebook — dev-only "Command Deck" panel.
+   Everything is scoped under .fb-console so nothing leaks
+   into the light site chrome that wraps this route.
+   ============================================================ */
+@property --fb-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes fb-trace-spin {
+  to {
+    --fb-angle: 360deg;
+  }
+}
+
+@keyframes fb-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.78);
+  }
+}
+
+@keyframes fb-shimmer {
+  from {
+    transform: translateX(-160%) skewX(-12deg);
+  }
+  to {
+    transform: translateX(320%) skewX(-12deg);
+  }
+}
+
+@keyframes fb-skeleton {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes fb-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@layer components {
+  .fb-console {
+    --fb-blue: #3b82f6;
+    --fb-blue-bright: #7dd3fc;
+    --fb-coral: #fb7649;
+  }
+
+  .fb-console ::selection {
+    background: color-mix(in srgb, var(--fb-blue) 55%, transparent);
+    color: #fff;
+  }
+
+  /* Tailwind v4 preflight drops the button pointer cursor — put it back for
+     everything clickable inside the console. */
+  .fb-console button:not(:disabled),
+  .fb-console summary,
+  .fb-console a[href],
+  .fb-console [role='button'],
+  .fb-console input[type='datetime-local'] {
+    cursor: pointer;
+  }
+  .fb-console button:disabled {
+    cursor: not-allowed;
+  }
+  .fb-console textarea {
+    cursor: text;
+  }
+
+  /* Kursy z powłoką blokową (historia, język polski) — stany kursora (najechanie, chwyt, przeciąganie). Warstwa
+     `components`, więc klasa `cursor-*` widżetu zawsze wygrywa z domyślną.
+     Trwanie przeciągania podtrzymuje `CourseCursorStates`
+     (src/components/block-lesson/); layout kursu owija go w `.course-cursors`. */
+  .course-cursors button:not(:disabled),
+  .course-cursors summary,
+  .course-cursors a[href],
+  .course-cursors label:has(input:not(:disabled)),
+  .course-cursors select:not(:disabled),
+  .course-cursors [role='button']:not([aria-disabled='true']),
+  .course-cursors [role='radio']:not([aria-disabled='true']),
+  .course-cursors [role='checkbox']:not([aria-disabled='true']),
+  .course-cursors [role='tab'],
+  .course-cursors [role='slider']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+  .course-cursors button:disabled,
+  .course-cursors select:disabled,
+  .course-cursors [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+  .course-cursors textarea,
+  .course-cursors input[type='text'],
+  .course-cursors input[type='number'],
+  .course-cursors input:not([type]) {
+    cursor: text;
+  }
+  /* Żeton z `useDragToken` — da się go podnieść. */
+  .course-cursors [data-drag-token]:not(:disabled) {
+    cursor: grab;
+  }
+  @media (hover: hover) {
+    .course-cursors [data-drag-token]:not(:disabled):hover {
+      box-shadow: 0 4px 10px -4px rgb(0 0 0 / 0.35);
+    }
+  }
+  /* Trwa przeciąganie: kursor chwytu wszędzie, także poza widżetem, i żadnego
+     zaznaczania tekstu po drodze. */
+  html[data-course-drag],
+  html[data-course-drag] * {
+    cursor: var(--course-drag-cursor) !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+
+  .fb-panel {
+    position: relative;
+    border-radius: 1rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px) saturate(1.35);
+    -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 24px 48px -28px rgba(0, 0, 0, 0.85);
+    transition:
+      border-color 0.25s ease,
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .fb-lift:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+      0 30px 60px -24px rgba(0, 0, 0, 0.9),
+      0 0 0 1px color-mix(in srgb, var(--fb-blue) 22%, transparent);
+  }
+
+  /* rotating neon trace on the compose deck — border only, nothing bleeds into the fill */
+  .fb-trace::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--fb-angle),
+      transparent 0deg,
+      var(--fb-blue-bright) 32deg,
+      color-mix(in srgb, var(--fb-blue) 80%, transparent) 62deg,
+      transparent 112deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: fb-trace-spin 7s linear infinite;
+  }
+
+  .fb-dot {
+    animation: fb-dot-pulse 2s ease-in-out infinite;
+  }
+
+  .fb-skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 25%,
+      rgba(255, 255, 255, 0.1) 37%,
+      rgba(255, 255, 255, 0.04) 63%
+    );
+    background-size: 200% 100%;
+    animation: fb-skeleton 1.5s ease-in-out infinite;
+  }
+
+  .fb-cta {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .fb-cta > .fb-cta-shine {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+    transform: translateX(-160%) skewX(-12deg);
+    pointer-events: none;
+  }
+  .fb-cta:hover:not(:disabled) > .fb-cta-shine {
+    animation: fb-shimmer 0.85s ease-out;
+  }
+
+  .fb-console .fb-in {
+    animation: fb-float-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .fb-console *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .fb-console *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.13);
+    border-radius: 999px;
+  }
+  .fb-console *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .fb-console *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-console *,
+  .fb-console *::before,
+  .fb-console *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ============================================================
+   /profil — świat wizualny „Atlas roku".
+   Rysunek techniczny zamiast kart: papier w siatce pod spodem,
+   arkusze ze znacznikami pasowania nad nim, a cała chroma
+   pochodzi wyłącznie z kolorów modułów kursu matematyki.
+   Wszystko pod .profil-atlas, żeby nic nie wyciekło do reszty
+   serwisu (ta sama izolacja co .fb-console wyżej).
+   ============================================================ */
+
+.profil-atlas {
+  --atlas-accent: #6366f1;
+
+  --paper: oklch(0.985 0.004 250);
+  --sheet: oklch(1 0 0 / 0.66);
+  --ink: oklch(0.23 0.03 258);
+  --ink-soft: oklch(0.47 0.025 258);
+  --ink-faint: oklch(0.5 0.025 258);
+  --rule: oklch(0.5 0.03 258 / 0.3);
+  --rule-faint: oklch(0.5 0.03 258 / 0.14);
+  --grid-minor: oklch(0.5 0.04 258 / 0.06);
+  --grid-major: oklch(0.5 0.05 258 / 0.11);
+
+  position: relative;
+  isolation: isolate;
+  /* Poświata wystaje poza oś (`inset-inline: -12%`), więc na telefonie
+     rozpychała stronę o kilkadziesiąt pikseli w bok. `clip` przycina ją, nie
+     tworząc kontekstu przewijania — w odróżnieniu od `hidden`, które zabiłoby
+     ewentualne `position: sticky` w środku. */
+  overflow-x: clip;
+  border-top: 1px solid var(--rule-faint);
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.dark .profil-atlas {
+  --paper: oklch(0.165 0.022 262);
+  --sheet: oklch(0.215 0.026 262 / 0.62);
+  --ink: oklch(0.95 0.012 250);
+  --ink-soft: oklch(0.75 0.025 252);
+  --ink-faint: oklch(0.63 0.025 252);
+  --rule: oklch(0.82 0.05 245 / 0.26);
+  --rule-faint: oklch(0.82 0.05 245 / 0.12);
+  --grid-minor: oklch(0.8 0.08 235 / 0.055);
+  --grid-major: oklch(0.8 0.09 235 / 0.1);
+}
+
+/* Powierzchnie, których nie rysujemy sami, też należą do świata. */
+.profil-atlas ::selection {
+  background: color-mix(in oklch, var(--atlas-accent) 24%, transparent);
+  color: var(--ink);
+}
+
+.profil-atlas :focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--atlas-accent) 65%, var(--ink));
+  outline-offset: 3px;
+  border-radius: 0;
+}
+
+/* --- podłoże ------------------------------------------------ */
+
+.profil-atlas__grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+  background-size:
+    26px 26px,
+    26px 26px,
+    130px 130px,
+    130px 130px;
+  -webkit-mask-image: radial-gradient(120% 78% at 50% 0%, #000 22%, transparent 90%);
+  mask-image: radial-gradient(120% 78% at 50% 0%, #000 22%, transparent 90%);
+}
+
+/* Poświata bierze kolor działu, na który patrzysz — to jedyny
+   ruchomy element atmosfery strony. */
+.profil-atlas__glow {
+  position: absolute;
+  inset-inline: -12%;
+  top: -30vh;
+  height: 72vh;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    44% 50% at 50% 64%,
+    color-mix(in oklch, var(--atlas-accent) 30%, transparent) 0%,
+    transparent 72%
+  );
+  filter: blur(48px);
+  transition: background 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- arkusz ze znacznikami pasowania ------------------------ */
+
+.profil-sheet {
+  position: relative;
+  background: var(--sheet);
+  border: 1px solid var(--rule-faint);
+}
+
+.profil-sheet::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--rule), var(--rule)) left 0 top 0 / 1px 15px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 0 top 0 / 15px 1px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) right 0 top 0 / 1px 15px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) right 0 top 0 / 15px 1px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 0 bottom 0 / 1px 15px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 0 bottom 0 / 15px 1px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) right 0 bottom 0 / 1px 15px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) right 0 bottom 0 / 15px 1px no-repeat;
+}
+
+/* --- typografia świata -------------------------------------- */
+
+.profil-micro {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.profil-num {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Kolor modułu w rozmiarze tekstu wymaga przyciemnienia (jasny motyw) albo
+   rozjaśnienia (ciemny) — 82% domieszki trzyma każdy z dziewięciu kolorów
+   powyżej 4.5:1 wobec papieru. Element podaje swój kolor przez --mod. */
+.profil-atlas .profil-modtext {
+  color: color-mix(in oklch, var(--mod, currentColor) 82%, black);
+}
+
+.dark .profil-atlas .profil-modtext {
+  color: color-mix(in oklch, var(--mod, currentColor) 82%, white);
+}
+
+/* Numeral działu, którego jeszcze nie ma — sam kontur, neutralny. */
+.profil-ghostnum {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ink-faint);
+}
+
+.profil-note-ok {
+  color: oklch(0.46 0.13 150);
+}
+
+.dark .profil-note-ok {
+  color: oklch(0.8 0.16 150);
+}
+
+.profil-note-err {
+  color: oklch(0.5 0.19 27);
+}
+
+.dark .profil-note-err {
+  color: oklch(0.75 0.16 22);
+}
+
+.profil-leader {
+  flex: 1 1 auto;
+  min-width: 1.5rem;
+  align-self: end;
+  margin-bottom: 0.3rem;
+  border-bottom: 1px dotted var(--rule);
+}
+
+/* --- kontrolki ---------------------------------------------- */
+
+.profil-atlas [data-slot='button'] {
+  border-radius: 0;
+}
+
+.profil-atlas input[data-slot='input'] {
+  height: 2.75rem;
+  border-radius: 0;
+  border-color: var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  caret-color: var(--atlas-accent);
+  box-shadow: none;
+}
+
+.profil-atlas input[data-slot='input']::placeholder {
+  color: var(--ink-faint);
+}
+
+.profil-atlas .profil-btn-quiet {
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.profil-atlas .profil-btn-quiet:hover {
+  background: color-mix(in oklch, var(--atlas-accent) 10%, transparent);
+  border-color: color-mix(in oklch, var(--atlas-accent) 45%, var(--rule));
+  color: var(--ink);
+}
+
+.profil-atlas .profil-btn-solid {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow:
+    0 1px 2px oklch(0.2 0.03 258 / 0.2),
+    0 10px 24px -12px oklch(0.2 0.03 258 / 0.55);
+}
+
+.profil-atlas .profil-btn-solid:hover {
+  background: color-mix(in oklch, var(--ink) 86%, var(--atlas-accent));
+  color: var(--paper);
+}
+
+/* --- rozwinięcia pulpitu ------------------------------------ */
+
+.profil-atlas .profil-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.5rem;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.profil-atlas .profil-toggle:hover {
+  background: color-mix(in oklch, var(--atlas-accent) 10%, transparent);
+  border-color: color-mix(in oklch, var(--atlas-accent) 45%, var(--rule));
+}
+
+.profil-atlas .profil-toggle[aria-expanded='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.profil-toggle__chev {
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profil-toggle[aria-expanded='true'] .profil-toggle__chev {
+  transform: rotate(180deg);
+}
+
+/* Wysokość panelu bez mierzenia treści: tor siatki 0fr → 1fr. */
+.profil-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 460ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profil-reveal[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+.profil-reveal > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Skrót wykresu roku zapełnia się raz, przy wejściu — ten sam ruch co słupki. */
+.profil-bar__fill {
+  animation: profil-sweep 900ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+}
+
+/* --- ruch: jeden autorski moment przy wejściu ---------------- */
+
+@keyframes profil-raise {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes profil-sweep {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.profil-underline {
+  animation: profil-sweep 900ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both;
+}
+
+.profil-plot__col {
+  animation: profil-raise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.profil-plot__level {
+  animation: profil-sweep 1.1s cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profil-underline,
+  .profil-plot__col,
+  .profil-plot__level,
+  .profil-bar__fill {
+    animation: none;
+    clip-path: none;
+  }
+
+  .profil-reveal,
+  .profil-toggle__chev {
+    transition: none;
+  }
+
+  .profil-atlas__glow {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   SERIA NAUKI — „rytm nauki"
+
+   Seria jest obiektem ponad kursami: ten sam licznik dotyczy
+   matematyki i informatyki, więc ma własny kolor, a nie kolor
+   modułu, w którym akurat stoi. Żar (hue 52) celowo odsuwa się
+   od marki (--primary, hue 35), żeby płomień czytał się jako
+   osobna rzecz, a nie jako kolejny przycisk serwisu.
+
+   Wartości dobrane pod kontrast: wypełnienie ≥3:1 wobec papieru
+   (WCAG 1.4.11), wersja tekstowa ≥4.5:1 w obu motywach.
+   ============================================================ */
+
+:root {
+  --streak: oklch(0.64 0.19 52);
+  --streak-ink: oklch(0.42 0.14 52);
+  --streak-cold: oklch(0.48 0.13 235);
+}
+
+.dark {
+  --streak: oklch(0.76 0.17 60);
+  --streak-ink: oklch(0.84 0.13 60);
+  --streak-cold: oklch(0.72 0.1 235);
+}
+
+/* Kratka tygodnia — jeden obiekt w czterech rozmiarach.
+   Stan NIGDY nie zależy od samego koloru: zaliczony jest pełny,
+   zamrożony ma płatek, opuszczony ma kreskę, dzisiejszy ma
+   przerywany obrys. Czytelne też przy daltonizmie i w druku. */
+
+.streak-cell {
+  position: relative;
+  display: block;
+  inline-size: var(--cell);
+  block-size: var(--cell);
+  flex: none;
+}
+
+/* Kratka w taśmie roku nie ma stałego boku: 43 kolumny dzielą szerokość
+   arkusza, więc rok mieści się na telefonie i na monitorze bez przewijania
+   i bez ani jednego media query. */
+.streak-cell--fluid {
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 1;
+}
+
+.streak-cell--done {
+  background: var(--streak);
+}
+
+.streak-cell--frozen {
+  background: color-mix(in oklch, var(--streak-cold) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--streak-cold) 55%, transparent);
+}
+
+.streak-cell--missed {
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, currentColor 24%, transparent);
+}
+
+/* Kreska w środku opuszczonego dnia — znak „tu nic nie było”, nie kolor. */
+.streak-cell--missed::after {
+  content: '';
+  position: absolute;
+  inset-inline: 22%;
+  inset-block-start: calc(50% - 0.5px);
+  block-size: 1px;
+  background: color-mix(in oklch, currentColor 32%, transparent);
+}
+
+.streak-cell--rest {
+  background: color-mix(in oklch, currentColor 8%, transparent);
+}
+
+.streak-cell--pending {
+  box-shadow: inset 0 0 0 1.5px var(--streak);
+  background: color-mix(in oklch, var(--streak) 10%, transparent);
+}
+
+.streak-cell--blank {
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, currentColor 14%, transparent);
+}
+
+/* Dzisiejsza kratka dostaje znacznik pod spodem — pozycja w tygodniu
+   musi być czytelna bez najeżdżania myszą. */
+.streak-cell--today::before {
+  content: '';
+  position: absolute;
+  inset-inline: 30%;
+  inset-block-start: calc(100% + 3px);
+  block-size: 2px;
+  background: var(--streak-ink);
+}
+
+/* Zapalenie dzisiejszej kratki po ukończeniu lekcji — jedyny
+   moment, w którym pasek się animuje. */
+@keyframes streak-ignite {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.streak-cell--ignite {
+  animation: streak-ignite 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stempel odznaki ląduje na arkuszu: opada, lekko się przekręca i siada. */
+@keyframes streak-stamp {
+  0% {
+    transform: scale(1.7) rotate(-9deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(0.94) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.streak-stamp {
+  animation: streak-stamp 620ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-cell--ignite,
+  .streak-stamp {
+    animation: none;
+  }
+}
+
+/* ── Baner cookies ─────────────────────────────────────────────
+   Jeden cel dla wzroku: przycisk zgody. Po jego obwódce biegnie jasna
+   smuga, cały przycisk lekko „oddycha” skalą, a po powierzchni co kilka
+   sekund przelatuje refleks. Reszta banera stoi spokojnie. */
+@property --cc-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.cc-banner {
+  box-shadow:
+    0 18px 48px -12px color-mix(in oklch, var(--foreground) 22%, transparent),
+    0 2px 6px -2px color-mix(in oklch, var(--foreground) 10%, transparent);
+  animation: cc-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cc-cookie {
+  animation: cc-cookie-tilt 900ms cubic-bezier(0.16, 1, 0.3, 1) 420ms both;
+}
+
+/* Obwódka: obracający się gradient stożkowy widoczny w 2.5px paddingu ramki. */
+.cc-accept-frame {
+  background: conic-gradient(
+    from var(--cc-angle),
+    color-mix(in oklch, var(--primary) 55%, white) 0deg,
+    color-mix(in oklch, var(--primary) 55%, white) 220deg,
+    oklch(0.86 0.17 85) 270deg,
+    oklch(0.99 0.03 95) 300deg,
+    oklch(0.8 0.2 55) 330deg,
+    color-mix(in oklch, var(--primary) 55%, white) 360deg
+  );
+  box-shadow: 0 10px 24px -8px color-mix(in oklch, var(--primary) 65%, transparent);
+  animation:
+    cc-border-run 2.6s linear infinite,
+    cc-pulse 2.4s cubic-bezier(0.45, 0, 0.55, 1) 700ms infinite;
+  will-change: transform;
+}
+
+.cc-accept {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms ease-out;
+}
+
+.cc-accept::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    color-mix(in oklch, white 55%, transparent) 48%,
+    color-mix(in oklch, white 20%, transparent) 54%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  animation: cc-shine 3.4s cubic-bezier(0.16, 1, 0.3, 1) 900ms infinite;
+  pointer-events: none;
+}
+
+.cc-accept-frame:hover {
+  animation-play-state: running, paused;
+}
+
+.cc-accept:hover {
+  background-color: color-mix(in oklch, var(--primary) 92%, black);
+}
+
+.cc-accept:active {
+  transform: scale(0.97);
+}
+
+.cc-details {
+  animation: cc-reveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cc-border-run {
+  to {
+    --cc-angle: 360deg;
+  }
+}
+
+@keyframes cc-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes cc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cc-cookie-tilt {
+  0% {
+    transform: rotate(-24deg) scale(0.7);
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes cc-shine {
+  0% {
+    transform: translateX(-130%);
+  }
+  38%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes cc-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ograniczony ruch: bez pulsu, biegu i refleksu — kolorowa obwódka zostaje statyczna. */
+@media (prefers-reduced-motion: reduce) {
+  .cc-banner,
+  .cc-cookie,
+  .cc-details {
+    animation: cc-fade 200ms ease-out both;
+  }
+  .cc-accept-frame,
+  .cc-accept::after {
+    animation: none;
+  }
+  .cc-accept::after {
+    display: none;
+  }
+}
